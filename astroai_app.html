@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JyotishAI - Multilingual Vedic Astrology</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        vedic: {
+                            900: '#0c0a1d',
+                            800: '#151238',
+                            700: '#231e54',
+                            600: '#39307c',
+                            gold: '#f59e0b',
+                            goldLight: '#fef3c7',
+                            goldDark: '#d97706',
+                            accent: '#8b5cf6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(21, 18, 56, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        .glass-tab {
+            background: rgba(35, 30, 84, 0.6);
+            backdrop-filter: blur(8px);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0c0a1d; }
+        ::-webkit-scrollbar-thumb { background: #39307c; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+    </style>
+</head>
+<body class="bg-vedic-900 text-slate-100 h-full flex flex-col overflow-hidden">
+
+    <!-- Top Header Bar -->
+    <header class="glass-card border-b border-vedic-600 px-4 py-3 flex items-center justify-between shrink-0 z-20">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 text-vedic-900 font-bold text-xl">
+                ✨
+            </div>
+            <div>
+                <h1 class="font-bold text-lg bg-gradient-to-r from-amber-200 via-amber-400 to-amber-100 bg-clip-text text-transparent" id="app-title">
+                    JyotishAI <span>ज्योतिष</span>
+                </h1>
+                <p class="text-xs text-amber-300/70" id="app-subtitle">Vedic Astrology & AI Insights</p>
+            </div>
+        </div>
+
+        <!-- Quick Language Switcher & Theme/Notification -->
+        <div class="flex items-center space-x-2">
+            <div class="relative">
+                <select id="global-lang-select" onchange="changeLanguage(this.value)" class="bg-vedic-700/80 text-amber-200 text-xs font-medium rounded-lg px-3 py-1.5 border border-amber-500/30 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer">
+                    <option value="en" class="bg-vedic-800 text-white">English</option>
+                    <option value="hi" class="bg-vedic-800 text-white">हिंदी (Hindi)</option>
+                    <option value="te" class="bg-vedic-800 text-white">తెలుగు (Telugu)</option>
+                </select>
+            </div>
+            <button onclick="showToast('Notifications: Today is a favorable day for new ventures!')" class="p-2 rounded-full bg-vedic-700/50 hover:bg-vedic-700 text-amber-300 transition">
+                <i data-lucide="bell" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container (Tabs) -->
+    <main class="flex-1 overflow-y-auto relative pb-20">
+        
+        <!-- ================= TAB 1: HOME / DAILY ================= -->
+        <div id="tab-home" class="tab-content p-4 max-w-4xl mx-auto space-y-6">
+            <!-- Banner / Greeting -->
+            <div class="glass-card rounded-2xl p-6 relative overflow-hidden bg-gradient-to-br from-indigo-950/80 via-purple-950/50 to-vedic-800 shadow-xl">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl">☸️</div>
+                <div class="relative z-10">
+                    <span class="text-xs uppercase tracking-widest px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30" id="home-badge">Daily Cosmic Alignment</span>
+                    <h2 class="text-2xl font-bold mt-3 text-amber-100" id="home-greeting">Namaste, Seeker</h2>
+                    <p class="text-sm text-slate-300 mt-1" id="home-subgreeting">The stars favor clarity and mindful action today. Check your daily panchang & rashi prediction.</p>
+                </div>
+            </div>
+
+            <!-- Rashi Selector Grid -->
+            <div class="space-y-3">
+                <h3 class="text-sm font-semibold text-amber-300 uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> <span id="select-rashi-title">Select Your Zodiac Sign (Rashi)</span>
+                </h3>
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5" id="rashi-grid">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- Daily Horoscope Result Card -->
+            <div class="glass-card rounded-2xl p-6 shadow-lg border border-amber-500/30 space-y-4" id="horoscope-card">
+                <div class="flex items-center justify-between border-b border-vedic-600 pb-3">
+                    <div class="flex items-center space-x-3">
+                        <div id="current-rashi-icon" class="text-3xl">♈</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-amber-200" id="current-rashi-name">Aries (Mesha / మేషం)</h4>
+                            <span class="text-xs text-amber-400/80" id="horoscope-date">Today's Forecast</span>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30" id="lucky-badge">Lucky: Gold & Red</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="bg-vedic-800/60 p-3.5 rounded-xl border border-vedic-600">
+                        <span class="text-amber-300 font-semibold block mb-1 text-xs uppercase" id="lbl-career">Career & Wealth</span>
+                        <p id="horoscope-career" class="text-slate-300 text-xs leading-relaxed">Favorable planetary transits bring new opportunities in professional investments.</p>
+                    </div>
+                    <div class="bg-vedic-800/60 p-3.5 rounded-xl border border-vedic-600">
+                        <span class="text-amber-300 font-semibold block mb-1 text-xs uppercase" id="lbl-love">Love & Family</span>
+                        <p id="horoscope-love" class="text-slate-300 text-xs leading-relaxed">Harmonious bonds. Open communication strengthens partnerships.</p>
+                    </div>
+                    <div class="bg-vedic-800/60 p-3.5 rounded-xl border border-vedic-600">
+                        <span class="text-amber-300 font-semibold block mb-1 text-xs uppercase" id="lbl-health">Health & Energy</span>
+                        <p id="horoscope-health" class="text-slate-300 text-xs leading-relaxed">High vitality. Morning meditation or yoga will balance solar energy.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panchang Widget -->
+            <div class="glass-card rounded-2xl p-5 border border-amber-500/20 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold text-amber-200 flex items-center gap-2">
+                        <i data-lucide="sun" class="w-4 h-4 text-amber-400"></i> <span id="panchang-title">Vedic Panchang (Today)</span>
+                    </h3>
+                    <span class="text-xs text-slate-400">Hyderabad, IN</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div class="p-3 bg-vedic-800/50 rounded-xl border border-vedic-600">
+                        <span class="text-slate-400 block" id="pan-tithi-lbl">Tithi</span>
+                        <span class="font-semibold text-amber-300 text-sm mt-0.5 block" id="pan-tithi">Shukla Dashami</span>
+                    </div>
+                    <div class="p-3 bg-vedic-800/50 rounded-xl border border-vedic-600">
+                        <span class="text-slate-400 block" id="pan-nak-lbl">Nakshatra</span>
+                        <span class="font-semibold text-amber-300 text-sm mt-0.5 block" id="pan-nak">Rohini</span>
+                    </div>
+                    <div class="p-3 bg-vedic-800/50 rounded-xl border border-vedic-600">
+                        <span class="text-slate-400 block" id="pan-yoga-lbl">Yoga</span>
+                        <span class="font-semibold text-amber-300 text-sm mt-0.5 block" id="pan-yoga">Siddhi</span>
+                    </div>
+                    <div class="p-3 bg-vedic-800/50 rounded-xl border border-vedic-600 border-red-500/30 bg-red-950/10">
+                        <span class="text-red-400 block" id="pan-rahu-lbl">Rahu Kalam</span>
+                        <span class="font-semibold text-red-300 text-xs mt-0.5 block">03:15 PM - 04:45 PM</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: KUNDLI / CHART ================= -->
+        <div id="tab-kundli" class="tab-content hidden p-4 max-w-4xl mx-auto space-y-6">
+            <div class="glass-card rounded-2xl p-6 border border-amber-500/30">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-amber-200 flex items-center gap-2">
+                        <i data-lucide="compass" class="w-5 h-5 text-amber-400"></i> <span id="kundli-form-title">Birth Details Generator (जन्म कुंडली / జాతకం)</span>
+                    </h3>
+                </div>
+                <form id="kundli-form" onsubmit="generateKundli(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-amber-300 mb-1" id="lbl-name">Full Name</label>
+                        <input type="text" id="k-name" required value="Aarav Sharma" class="w-full bg-vedic-800/80 border border-vedic-600 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-amber-300 mb-1" id="lbl-dob">Date of Birth</label>
+                        <input type="date" id="k-dob" required value="1995-06-15" class="w-full bg-vedic-800/80 border border-vedic-600 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-amber-300 mb-1" id="lbl-tob">Time of Birth</label>
+                        <input type="time" id="k-tob" required value="10:30" class="w-full bg-vedic-800/80 border border-vedic-600 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-amber-300 mb-1" id="lbl-pob">Place of Birth</label>
+                        <input type="text" id="k-pob" required value="New Delhi, India" class="w-full bg-vedic-800/80 border border-vedic-600 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div class="sm:col-span-2 pt-2">
+                        <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-vedic-900 font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i> <span id="btn-gen-kundli">Generate Vedic Kundli</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Kundli Output Area -->
+            <div id="kundli-result" class="space-y-6">
+                <!-- North Indian Chart Container -->
+                <div class="glass-card rounded-2xl p-6 border border-amber-500/30 flex flex-col md:flex-row gap-6 items-center">
+                    <div class="w-full md:w-1/2 flex flex-col items-center">
+                        <h4 class="text-sm font-semibold text-amber-300 mb-3" id="lbl-chart-title">Lagnam Chart (राशी चक्र / లగ్న చార్ట్)</h4>
+                        <!-- SVG North Indian Vedic Chart -->
+                        <div class="w-72 h-72 bg-vedic-900/90 border-2 border-amber-500/50 rounded-lg p-1 relative shadow-2xl flex items-center justify-center">
+                            <svg viewBox="0 0 200 200" class="w-full h-full text-amber-400">
+                                <!-- Outer Diamond Box -->
+                                <polygon points="100,2 198,100 100,198 2,100" fill="none" stroke="currentColor" stroke-width="2"/>
+                                <!-- Inner Diagonals -->
+                                <line x1="2" y1="100" x2="198" y2="100" stroke="currentColor" stroke-width="1.5"/>
+                                <line x1="100" y1="2" x2="100" y2="198" stroke="currentColor" stroke-width="1.5"/>
+                                <line x1="2" y1="2" x2="198" y2="198" stroke="currentColor" stroke-width="1.5"/>
+                                <line x1="198" y1="2" x2="2" y2="198" stroke="currentColor" stroke-width="1.5"/>
+                                <!-- House Texts -->
+                                <text x="100" y="35" font-size="9" fill="#fde68a" text-anchor="middle">1 (Asc)</text>
+                                <text x="50" y="35" font-size="8" fill="#cbd5e1" text-anchor="middle">Sun, Merc</text>
+                                <text x="150" y="35" font-size="8" fill="#cbd5e1" text-anchor="middle">Venus</text>
+                                <text x="35" y="65" font-size="8" fill="#cbd5e1" text-anchor="middle">Mars</text>
+                                <text x="165" y="65" font-size="8" fill="#cbd5e1" text-anchor="middle">Jupiter</text>
+                                <text x="100" y="95" font-size="8" fill="#cbd5e1" text-anchor="middle">Saturn (R)</text>
+                                <text x="35" y="145" font-size="8" fill="#cbd5e1" text-anchor="middle">Rahu</text>
+                                <text x="165" y="145" font-size="8" fill="#cbd5e1" text-anchor="middle">Ketu</text>
+                                <text x="100" y="170" font-size="8" fill="#cbd5e1" text-anchor="middle">Moon</text>
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- Planetary Positions Table -->
+                    <div class="w-full md:w-1/2 space-y-3">
+                        <h4 class="text-sm font-semibold text-amber-300" id="lbl-graha-pos">Planetary Positions (ग्रह स्थिति / గ్రహ స్థానాలు)</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left text-slate-300">
+                                <thead class="text-amber-300 bg-vedic-800/80 border-b border-vedic-600">
+                                    <tr>
+                                        <th class="p-2.5 rounded-l-lg" id="th-planet">Planet</th>
+                                        <th class="p-2.5" id="th-sign">Sign</th>
+                                        <th class="p-2.5" id="th-house">House</th>
+                                        <th class="p-2.5 rounded-r-lg" id="th-nakshatra">Nakshatra</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-vedic-800" id="planet-table-body">
+                                    <tr class="hover:bg-vedic-800/40">
+                                        <td class="p-2.5 font-medium text-amber-200">Sun (সূর্য / సూర్యుడు)</td>
+                                        <td class="p-2.5">Gemini (मिथुन)</td>
+                                        <td class="p-2.5">10th</td>
+                                        <td class="p-2.5">Aridra 2</td>
+                                    </tr>
+                                    <tr class="hover:bg-vedic-800/40">
+                                        <td class="p-2.5 font-medium text-amber-200">Moon (चन्द्र / చంద్రుడు)</td>
+                                        <td class="p-2.5">Scorpio (वृश्चिक)</td>
+                                        <td class="p-2.5">4th</td>
+                                        <td class="p-2.5">Anuradha 4</td>
+                                    </tr>
+                                    <tr class="hover:bg-vedic-800/40">
+                                        <td class="p-2.5 font-medium text-amber-200">Mars (मंगल / కుజుడు)</td>
+                                        <td class="p-2.5">Taurus (वृषभ)</td>
+                                        <td class="p-2.5">9th</td>
+                                        <td class="p-2.5">Krittika 1</td>
+                                    </tr>
+                                    <tr class="hover:bg-vedic-800/40">
+                                        <td class="p-2.5 font-medium text-amber-200">Mercury (बुध / బుధుడు)</td>
+                                        <td class="p-2.5">Gemini (मिथुन)</td>
+                                        <td class="p-2.5">10th</td>
+                                        <td class="p-2.5">Mrigashira 3</td>
+                                    </tr>
+                                    <tr class="hover:bg-vedic-800/40">
+                                        <td class="p-2.5 font-medium text-amber-200">Jupiter (गुरु / గురుడు)</td>
+                                        <td class="p-2.5">Sagittarius (धनु)</td>
+                                        <td class="p-2.5">2nd</td>
+                                        <td class="p-2.5">Purva Ashadha</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: AI ASTROLOGER (CHAT) ================= -->
+        <div id="tab-ai" class="tab-content hidden h-full flex flex-col max-w-3xl mx-auto p-4">
+            <div class="glass-card rounded-2xl flex-1 flex flex-col overflow-hidden border border-amber-500/30">
+                <!-- Chat Header -->
+                <div class="p-4 bg-vedic-800/80 border-b border-vedic-600 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 to-purple-600 flex items-center justify-center text-vedic-900 font-bold">
+                            🔮
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-amber-200" id="ai-chat-heading">Guru AI Astrologer</h3>
+                            <span class="text-xs text-emerald-400 flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Online Vedic Expert
+                            </span>
+                        </div>
+                    </div>
+                    <button onclick="clearChat()" class="text-xs text-slate-400 hover:text-amber-300 underline" id="btn-clear-chat">Clear Chat</button>
+                </div>
+
+                <!-- Chat Messages Scroll Area -->
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 text-sm">
+                    <!-- Initial AI Greeting Message -->
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0 text-amber-300 font-bold">
+                            AI
+                        </div>
+                        <div class="glass-card rounded-2xl rounded-tl-sm p-4 max-w-[80%] text-slate-200 leading-relaxed" id="ai-welcome-msg">
+                            Namaste! I am your AI Vedic Astrologer. Ask me anything regarding your career, marriage, health, or planetary transits in <strong>English, हिन्दी, or తెలుగు</strong>.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Suggested Quick Prompts -->
+                <div class="px-4 py-2 bg-vedic-900/40 border-t border-vedic-600/50 flex gap-2 overflow-x-auto text-xs">
+                    <button onclick="sendQuickPrompt('Tell me about my career & wealth prospects')" class="whitespace-nowrap px-3 py-1.5 rounded-full bg-vedic-700/60 hover:bg-amber-500/20 border border-amber-500/30 text-amber-200 transition" id="qp-career">💼 Career & Wealth</button>
+                    <button onclick="sendQuickPrompt('When will I get married? Matchmaking analysis')" class="whitespace-nowrap px-3 py-1.5 rounded-full bg-vedic-700/60 hover:bg-amber-500/20 border border-amber-500/30 text-amber-200 transition" id="qp-marriage">💍 Marriage & Love</button>
+                    <button onclick="sendQuickPrompt('Remedies for Saturn Sade Sati')" class="whitespace-nowrap px-3 py-1.5 rounded-full bg-vedic-700/60 hover:bg-amber-500/20 border border-amber-500/30 text-amber-200 transition" id="qp-remedies">🪔 Saturn Remedies</button>
+                </div>
+
+                <!-- Chat Input Bar -->
+                <div class="p-3 bg-vedic-800/90 border-t border-vedic-600 flex items-center space-x-2">
+                    <input type="text" id="chat-input" onkeypress="handleChatKey(event)" placeholder="Ask your astrological question (e.g. నా కెరీర్ ఎలా ఉంది?)..." class="flex-1 bg-vedic-900/80 border border-vedic-600 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-400">
+                    <button onclick="sendChatMessage()" class="p-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-vedic-900 font-bold transition shadow-lg">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 4: MATCHING (KUNDLI MILAN) ================= -->
+        <div id="tab-matching" class="tab-content hidden p-4 max-w-4xl mx-auto space-y-6">
+            <div class="glass-card rounded-2xl p-6 border border-amber-500/30">
+                <h3 class="text-lg font-bold text-amber-200 mb-4 flex items-center gap-2">
+                    <i data-lucide="heart" class="w-5 h-5 text-red-400"></i> <span id="matching-title">Kundli Matching / Guna Milan (गुण मिलान / గుణమిలాన్)</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Boy's Details -->
+                    <div class="space-y-3 bg-vedic-800/40 p-4 rounded-xl border border-vedic-600">
+                        <h4 class="font-semibold text-amber-300 text-sm" id="lbl-boy-det">Boy's Birth Details (वर विवरण)</h4>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1" id="lbl-b-name">Name</label>
+                            <input type="text" id="m-boy-name" value="Rahul Sharma" class="w-full bg-vedic-900/80 border border-vedic-600 rounded-xl px-3 py-2 text-sm text-slate-100">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1" id="lbl-b-dob">Date of Birth</label>
+                            <input type="date" id="m-boy-dob" value="1992-11-10" class="w-full bg-vedic-900/80 border border-vedic-600 rounded-xl px-3 py-2 text-sm text-slate-100">
+                        </div>
+                    </div>
+                    <!-- Girl's Details -->
+                    <div class="space-y-3 bg-vedic-800/40 p-4 rounded-xl border border-vedic-600">
+                        <h4 class="font-semibold text-amber-300 text-sm" id="lbl-girl-det">Girl's Birth Details (वधू विवरण)</h4>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1" id="lbl-g-name">Name</label>
+                            <input type="text" id="m-girl-name" value="Priya Verma" class="w-full bg-vedic-900/80 border border-vedic-600 rounded-xl px-3 py-2 text-sm text-slate-100">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1" id="lbl-g-dob">Date of Birth</label>
+                            <input type="date" id="m-girl-dob" value="1994-04-20" class="w-full bg-vedic-900/80 border border-vedic-600 rounded-xl px-3 py-2 text-sm text-slate-100">
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <button onclick="calculateMatching()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-vedic-900 font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i> <span id="btn-match">Check Guna Milan (36 Points)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Matching Result Box -->
+            <div id="matching-result" class="hidden glass-card rounded-2xl p-6 border border-amber-500/30 space-y-6">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-vedic-600 pb-4">
+                    <div>
+                        <h4 class="text-xl font-bold text-amber-200" id="match-score-title">Compatibility Score: <span class="text-emerald-400 text-2xl">28.5 / 36</span></h4>
+                        <p class="text-xs text-slate-300 mt-1" id="match-verdict">Excellent Compatibility (Uttam Milan). Marriage is highly recommended!</p>
+                    </div>
+                    <div class="px-4 py-2 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-300 font-bold text-sm">
+                        Manglik Dosha: Cleared / Compatible
+                    </div>
+                </div>
+                <!-- Ashta Koota Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div class="p-3 bg-vedic-800/60 rounded-xl border border-vedic-600">
+                        <span class="text-slate-400 block">Varna (1 pt)</span>
+                        <span class="font-semibold text-amber-300 text-sm mt-0.5 block">1.0 / 1.0</span>
+                    </div>
+                    <div class="p-3 bg-vedic-800/60 rounded-xl border border-vedic-600">
+                        <span class="text-slate-400 block">Vashya (2 pts)</span>
+                        <span class="font-semibold text-amber-300 text-sm mt-0.5 block">1.5 / 2.0</span>
+                    </div>
+                    <div class="p-3 bg-vedic-800/60 rounded-xl border border-vedic-600">
+                        <span class="text-slate-400 block">Tara (3 pts)</span>
+                        <span class="font-semibold text-amber-300 text-sm mt-0.5 block">3.0 / 3.0</span>
+                    </div>
+                    <div class="p-3 bg-vedic-800/60 rounded-xl border border-vedic-600">
+                        <span class="text-slate-400 block">Yoni (4 pts)</span>
+                        <span class="font-semibold text-amber-300 text-sm mt-0.5 block">3.0 / 4.0</span>
+                    </div>
+                    <div class="p-3 bg-vedic-800/60 rounded-xl border border-vedic-600">
+                        <span class="text-slate-400 block">Graha Maitri (5 pts)</span>
+                        <span class="font-semibold text-amber-300 text-sm mt-0.5 block">4.0 / 5.0</span>
+                    </div>
+                    <div class="p-3 bg-vedic-800/60 rounded-xl border border-vedic-600">
+                        <span class="text-slate-400 block">Gana (6 pts)</span>
+                        <span class="font-semibold text-amber-300 text-sm mt-0.5 block">6.0 / 6.0</span>
+                    </div>
+                    <div class="p-3 bg-vedic-800/60 rounded-xl border border-vedic-600">
+                        <span class="text-slate-400 block">Bhakoot (7 pts)</span>
+                        <span class="font-semibold text-amber-300 text-sm mt-0.5 block">7.0 / 7.0</span>
+                    </div>
+                    <div class="p-3 bg-vedic-800/60 rounded-xl border border-vedic-600">
+                        <span class="text-slate-400 block">Nadi (8 pts)</span>
+                        <span class="font-semibold text-amber-300 text-sm mt-0.5 block">3.0 / 8.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 5: PROFILE / MORE ================= -->
+        <div id="tab-profile" class="tab-content hidden p-4 max-w-4xl mx-auto space-y-6">
+            <div class="glass-card rounded-2xl p-6 border border-amber-500/30 space-y-6">
+                <!-- User Profile Header -->
+                <div class="flex items-center space-x-4 border-b border-vedic-600 pb-4">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center text-vedic-900 font-bold text-2xl shadow-lg">
+                        AS
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg text-amber-200" id="prof-name">Aarav Sharma</h3>
+                        <p class="text-xs text-slate-300">aarav.sharma@astro.ai • Born: 15 June 1995</p>
+                        <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30" id="prof-badge">Premium Vedic Member</span>
+                    </div>
+                </div>
+
+                <!-- Settings / Options -->
+                <div class="space-y-4">
+                    <h4 class="text-sm font-semibold text-amber-300 uppercase tracking-wider" id="sec-settings">Preferences & Settings</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-vedic-800/50 p-4 rounded-xl border border-vedic-600 flex items-center justify-between">
+                            <div>
+                                <span class="font-medium text-sm text-slate-200 block" id="lbl-lang-pref">App Language / भाषा / భాష</span>
+                                <span class="text-xs text-slate-400" id="lbl-lang-sub">Switch between English, Hindi, Telugu</span>
+                            </div>
+                            <select onchange="changeLanguage(this.value)" id="profile-lang-select" class="bg-vedic-700 text-amber-200 text-xs font-medium rounded-lg px-3 py-2 border border-amber-500/30 focus:outline-none">
+                                <option value="en">English</option>
+                                <option value="hi">हिंदी</option>
+                                <option value="te">తెలుగు</option>
+                            </select>
+                        </div>
+                        <div class="bg-vedic-800/50 p-4 rounded-xl border border-vedic-600 flex items-center justify-between">
+                            <div>
+                                <span class="font-medium text-sm text-slate-200 block" id="lbl-notif">Daily Notifications</span>
+                                <span class="text-xs text-slate-400" id="lbl-notif-sub">Receive daily Panchang & transit alerts</span>
+                            </div>
+                            <input type="checkbox" checked class="w-5 h-5 accent-amber-500 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saved Charts -->
+                <div class="space-y-3 pt-2">
+                    <h4 class="text-sm font-semibold text-amber-300 uppercase tracking-wider" id="sec-saved">Saved Birth Charts</h4>
+                    <div class="space-y-2">
+                        <div class="bg-vedic-800/40 p-3 rounded-xl border border-vedic-600 flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="p-2 bg-amber-500/20 text-amber-300 rounded-lg">📜</div>
+                                <div>
+                                    <h5 class="text-sm font-medium text-amber-200">Aarav Sharma (Self)</h5>
+                                    <p class="text-xs text-slate-400">15 Jun 1995 • 10:30 AM • New Delhi</p>
+                                </div>
+                            </div>
+                            <button onclick="showToast('Loaded chart successfully!')" class="text-xs px-3 py-1.5 rounded-lg bg-vedic-700 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30" id="btn-load">Load</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (5 Options) -->
+    <nav class="absolute bottom-0 left-0 right-0 glass-tab border-t border-vedic-600 px-2 py-2 flex justify-around items-center z-30 shadow-2xl">
+        <button onclick="switchTab('home')" id="nav-home" class="nav-btn flex flex-col items-center justify-center w-1/5 py-1 text-amber-400 transition">
+            <i data-lucide="home" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px] font-medium" id="tab-lbl-home">Daily</span>
+        </button>
+        <button onclick="switchTab('kundli')" id="nav-kundli" class="nav-btn flex flex-col items-center justify-center w-1/5 py-1 text-slate-400 hover:text-amber-300 transition">
+            <i data-lucide="compass" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px] font-medium" id="tab-lbl-kundli">Kundli</span>
+        </button>
+        <button onclick="switchTab('ai')" id="nav-ai" class="nav-btn flex flex-col items-center justify-center w-1/5 py-1 text-slate-400 hover:text-amber-300 transition">
+            <i data-lucide="bot" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px] font-medium" id="tab-lbl-ai">AI Astrologer</span>
+        </button>
+        <button onclick="switchTab('matching')" id="nav-matching" class="nav-btn flex flex-col items-center justify-center w-1/5 py-1 text-slate-400 hover:text-amber-300 transition">
+            <i data-lucide="heart" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px] font-medium" id="tab-lbl-matching">Matching</span>
+        </button>
+        <button onclick="switchTab('profile')" id="nav-profile" class="nav-btn flex flex-col items-center justify-center w-1/5 py-1 text-slate-400 hover:text-amber-300 transition">
+            <i data-lucide="user" class="w-5 h-5 mb-1"></i>
+            <span class="text-[10px] font-medium" id="tab-lbl-profile">Profile</span>
+        </button>
+    </nav>
+
+    <!-- Floating Toast Notification -->
+    <div id="toast" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-vedic-800 border border-amber-500/50 text-amber-200 px-4 py-2 rounded-xl shadow-2xl text-xs z-50 opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
+        <span>✨</span> <span id="toast-msg">Notification message</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Initialize Lucide icons
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderRashis();
+        });
+
+        let currentLanguage = 'en';
+
+        // Multilingual Dictionary
+        const translations = {
+            en: {
+                appTitle: 'JyotishAI <span>ज्योतिष</span>',
+                appSubtitle: 'Vedic Astrology & AI Insights',
+                homeBadge: 'Daily Cosmic Alignment',
+                homeGreeting: 'Namaste, Seeker',
+                homeSubgreeting: 'The stars favor clarity and mindful action today. Check your daily panchang & rashi prediction.',
+                selectRashi: 'Select Your Zodiac Sign (Rashi)',
+                lblCareer: 'Career & Wealth',
+                lblLove: 'Love & Family',
+                lblHealth: 'Health & Energy',
+                panchangTitle: 'Vedic Panchang (Today)',
+                panTithiLbl: 'Tithi',
+                panNakLbl: 'Nakshatra',
+                panYogaLbl: 'Yoga',
+                panRahuLbl: 'Rahu Kalam',
+                kundliFormTitle: 'Birth Details Generator',
+                lblName: 'Full Name',
+                lblDob: 'Date of Birth',
+                lblTob: 'Time of Birth',
+                lblPob: 'Place of Birth',
+                btnGenKundli: 'Generate Vedic Kundli',
+                lblChartTitle: 'Lagnam Chart',
+                lblGrahaPos: 'Planetary Positions',
+                thPlanet: 'Planet',
+                thSign: 'Sign',
+                thHouse: 'House',
+                thNakshatra: 'Nakshatra',
+                aiChatHeading: 'Guru AI Astrologer',
+                btnClearChat: 'Clear Chat',
+                aiWelcomeMsg: 'Namaste! I am your AI Vedic Astrologer. Ask me anything regarding your career, marriage, health, or planetary transits in <strong>English, हिन्दी, or తెలుగు</strong>.',
+                qpCareer: '💼 Career & Wealth',
+                qpMarriage: '💍 Marriage & Love',
+                qpRemedies: '🪔 Saturn Remedies',
+                matchingTitle: 'Kundli Matching / Guna Milan',
+                lblBoyDetail: "Boy's Birth Details",
+                lblGirlDetail: "Girl's Birth Details",
+                lblBName: 'Name',
+                lblBDob: 'Date of Birth',
+                lblGName: 'Name',
+                lblGDob: 'Date of Birth',
+                btnMatch: 'Check Guna Milan (36 Points)',
+                profName: 'Aarav Sharma',
+                profBadge: 'Premium Vedic Member',
+                secSettings: 'Preferences & Settings',
+                lblLangPref: 'App Language / भाषा / భాష',
+                lblLangSub: 'Switch between English, Hindi, Telugu',
+                lblNotif: 'Daily Notifications',
+                lblNotifSub: 'Receive daily Panchang & transit alerts',
+                secSaved: 'Saved Birth Charts',
+                btnLoad: 'Load',
+                tabHome: 'Daily',
+                tabKundli: 'Kundli',
+                tabAi: 'AI Astrologer',
+                tabMatching: 'Matching',
+                tabProfile: 'Profile'
+            },
+            hi: {
+                appTitle: 'ज्योतिषAI <span>JyotishAI</span>',
+                appSubtitle: 'वैदिक ज्योतिष और AI भविष्यवाणियां',
+                homeBadge: 'दैनिक ब्रह्मांडीय स्थिति',
+                homeGreeting: 'नमस्ते, साधक',
+                homeSubgreeting: 'आज तारे आपकी स्पष्टता और सूझबूझ का समर्थन करते हैं। अपना दैनिक पंचांग और राशिफल जांचें।',
+                selectRashi: 'अपनी राशि चुनें',
+                lblCareer: 'करियर एवं धन',
+                lblLove: 'प्रेम एवं परिवार',
+                lblHealth: 'स्वास्थ्य एवं ऊर्जा',
+                panchangTitle: 'वैदिक पंचांग (आज)',
+                panTithiLbl: 'तिथि',
+                panNakLbl: 'नक्षत्र',
+                panYogaLbl: 'योग',
+                panRahuLbl: 'राहुकाल',
+                kundliFormTitle: 'जन्म कुंडली जनरेटर',
+                lblName: 'पूरा नाम',
+                lblDob: 'जन्म तिथि',
+                lblTob: 'जन्म समय',
+                lblPob: 'जन्म स्थान',
+                btnGenKundli: 'वैदिक कुंडली बनाएं',
+                lblChartTitle: 'लग्न कुंडली चक्र',
+                lblGrahaPos: 'ग्रह स्थिति',
+                thPlanet: 'ग्रह',
+                thSign: 'राशि',
+                thHouse: 'भाव',
+                thNakshatra: 'नक्षत्र',
+                aiChatHeading: 'गुरु AI ज्योतिषी',
+                btnClearChat: 'चैट साफ करें',
+                aiWelcomeMsg: 'नमस्ते! मैं आपका AI वैदिक ज्योतिषी हूँ। करियर, विवाह, स्वास्थ्य या ग्रह गोचर के बारे में <strong>English, हिन्दी, या తెలుగు</strong> में पूछें।',
+                qpCareer: '💼 करियर और धन',
+                qpMarriage: '💍 विवाह और प्रेम',
+                qpRemedies: '🪔 शनि उपाय',
+                matchingTitle: 'कुंडली मिलान / गुण मिलान',
+                lblBoyDetail: 'वर विवरण',
+                lblGirlDetail: 'वधू विवरण',
+                lblBName: 'नाम',
+                lblBDob: 'जन्म तिथि',
+                lblGName: 'नाम',
+                lblGDob: 'जन्म तिथि',
+                btnMatch: 'गुण मिलान जांचें (36 अंक)',
+                profName: 'आरव शर्मा',
+                profBadge: 'प्रीमियम वैदिक सदस्य',
+                secSettings: 'प्राथमिकताएं और सेटिंग्स',
+                lblLangPref: 'ऐप भाषा / Language / భాష',
+                lblLangSub: 'अंग्रेजी, हिंदी, तेलुगु के बीच स्विच करें',
+                lblNotif: 'दैनिक सूचनाएं',
+                lblNotifSub: 'दैनिक पंचांग और गोचर अलर्ट प्राप्त करें',
+                secSaved: 'सहेजी गई जन्म कुंडली',
+                btnLoad: 'लोड करें',
+                tabHome: 'दैनिक',
+                tabKundli: 'कुंडली',
+                tabAi: 'AI ज्योतिषी',
+                tabMatching: 'मिलान',
+                tabProfile: 'प्रोफाइल'
+            },
+            te: {
+                appTitle: 'జ్యోతిష్AI <span>Astrology</span>',
+                appSubtitle: 'వేద జ్యోతిష్యం & AI అంచనాలు',
+                homeBadge: 'దైనిక గ్రహ సంచారం',
+                homeGreeting: 'నమస్తే, అన్వేషక',
+                homeSubgreeting: 'ఈరోజు గ్రహాలు మీకు అనుకూలంగా ఉన్నాయి. మీ దైనిక పంచాంగం మరియు రాశి ఫలాలు చూడండి.',
+                selectRashi: 'మీ రాశిని ఎంచుకోండి',
+                lblCareer: 'ఉద్యోగం & ధనం',
+                lblLove: 'ప్రేమ & కుటుంబం',
+                lblHealth: 'ఆరోగ్యం & శక్తి',
+                panchangTitle: 'వేద పంచాంగం (ఈరోజు)',
+                panTithiLbl: 'తిథి',
+                panNakLbl: 'నక్షత్రం',
+                panYogaLbl: 'యోగం',
+                panRahuLbl: 'రాహుకాలం',
+                kundliFormTitle: 'జాతక జనరేటర్',
+                lblName: 'పూర్తి పేరు',
+                lblDob: 'పుట్టిన తేదీ',
+                lblTob: 'పుట్టిన సమయం',
+                lblPob: 'పుట్టిన ప్రదేశం',
+                btnGenKundli: 'వేద జాతకం సృష్టించండి',
+                lblChartTitle: 'లగ్న చార్ట్',
+                lblGrahaPos: 'గ్రహ స్థానాలు',
+                thPlanet: 'గ్రహం',
+                thSign: 'రాశి',
+                thHouse: 'భావం',
+                thNakshatra: 'నక్షత్రం',
+                aiChatHeading: 'గురు AI జ్యోతిష్యుడు',
+                btnClearChat: 'చాట్ తొలగించు',
+                aiWelcomeMsg: 'నమస్తే! నేను మీ AI వేద జ్యోతిష్యుడిని. మీ కెరీర్, వివాహం, ఆరోగ్యం గురించి <strong>English, हिन्दी, లేదా తెలుగు</strong> లో అడగండి.',
+                qpCareer: '💼 కెరీర్ & ధనం',
+                qpMarriage: '💍 వివాహం & ప్రేమ',
+                qpRemedies: '🪔 శని పరిహారాలు',
+                matchingTitle: 'జాతక జతపరుచుట / గుణమిలాన్',
+                lblBoyDetail: 'వరుని వివరాలు',
+                lblGirlDetail: 'వధువు వివరాలు',
+                lblBName: 'పేరు',
+                lblBDob: 'పుట్టిన తేదీ',
+                lblGName: 'పేరు',
+                lblGDob: 'పుట్టిన తేదీ',
+                btnMatch: 'గుణమిలాన్ తనిఖీ చేయండి (36 పాయింట్లు)',
+                profName: 'ఆరవ్ శర్మ',
+                profBadge: 'ప్రీమియం వేద సభ్యుడు',
+                secSettings: 'ప్రాధాన్యతలు & సెట్టింగ్‌లు',
+                lblLangPref: 'యాప్ భాష / Language / भाषा',
+                lblLangSub: 'ఇంగ్లీష్, హిందీ, తెలుగు మధ్య మార్చుకోండి',
+                lblNotif: 'రోజువారీ నోటిఫికేషన్‌లు',
+                lblNotifSub: 'రోజువారీ పంచాంగం హెచ్చరికలను స్వీకరించండి',
+                secSaved: 'సేవ్ చేసిన జాతకాలు',
+                btnLoad: 'లోడ్ చేయి',
+                tabHome: 'రోజువారీ',
+                tabKundli: 'జాతకం',
+                tabAi: 'AI జ్యోతిష్య',
+                tabMatching: 'జతపరుచు',
+                tabProfile: 'ప్రొఫైల్'
+            }
+        };
+
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            document.getElementById('global-lang-select').value = lang;
+            document.getElementById('profile-lang-select').value = lang;
+            const t = translations[lang];
+
+            document.getElementById('app-title').innerHTML = t.appTitle;
+            document.getElementById('app-subtitle').innerText = t.appSubtitle;
+            document.getElementById('home-badge').innerText = t.homeBadge;
+            document.getElementById('home-greeting').innerText = t.homeGreeting;
+            document.getElementById('home-subgreeting').innerText = t.homeSubgreeting;
+            document.getElementById('select-rashi-title').innerText = t.selectRashi;
+            document.getElementById('lbl-career').innerText = t.lblCareer;
+            document.getElementById('lbl-love').innerText = t.lblLove;
+            document.getElementById('lbl-health').innerText = t.lblHealth;
+            document.getElementById('panchang-title').innerText = t.panchangTitle;
+            document.getElementById('pan-tithi-lbl').innerText = t.panTithiLbl;
+            document.getElementById('pan-nak-lbl').innerText = t.panNakLbl;
+            document.getElementById('pan-yoga-lbl').innerText = t.panYogaLbl;
+            document.getElementById('pan-rahu-lbl').innerText = t.panRahuLbl;
+            document.getElementById('kundli-form-title').innerText = t.kundliFormTitle;
+            document.getElementById('lbl-name').innerText = t.lblName;
+            document.getElementById('lbl-dob').innerText = t.lblDob;
+            document.getElementById('lbl-tob').innerText = t.lblTob;
+            document.getElementById('lbl-pob').innerText = t.lblPob;
+            document.getElementById('btn-gen-kundli').innerText = t.btnGenKundli;
+            document.getElementById('lbl-chart-title').innerText = t.lblChartTitle;
+            document.getElementById('lbl-graha-pos').innerText = t.lblGrahaPos;
+            document.getElementById('th-planet').innerText = t.thPlanet;
+            document.getElementById('th-sign').innerText = t.thSign;
+            document.getElementById('th-house').innerText = t.thHouse;
+            document.getElementById('th-nakshatra').innerText = t.thNakshatra;
+            document.getElementById('ai-chat-heading').innerText = t.aiChatHeading;
+            document.getElementById('btn-clear-chat').innerText = t.btnClearChat;
+            document.getElementById('ai-welcome-msg').innerHTML = t.aiWelcomeMsg;
+            document.getElementById('qp-career').innerText = t.qpCareer;
+            document.getElementById('qp-marriage').innerText = t.qpMarriage;
+            document.getElementById('qp-remedies').innerText = t.qpRemedies;
+            document.getElementById('matching-title').innerText = t.matchingTitle;
+            document.getElementById('lbl-boy-det').innerText = t.lblBoyDetail;
+            document.getElementById('lbl-girl-det').innerText = t.lblGirlDetail;
+            document.getElementById('lbl-b-name').innerText = t.lblBName;
+            document.getElementById('lbl-b-dob').innerText = t.lblBDob;
+            document.getElementById('lbl-g-name').innerText = t.lblGName;
+            document.getElementById('lbl-g-dob').innerText = t.lblGDob;
+            document.getElementById('btn-match').innerText = t.btnMatch;
+            document.getElementById('prof-name').innerText = t.profName;
+            document.getElementById('prof-badge').innerText = t.profBadge;
+            document.getElementById('sec-settings').innerText = t.secSettings;
+            document.getElementById('lbl-lang-pref').innerText = t.lblLangPref;
+            document.getElementById('lbl-lang-sub').innerText = t.lblLangSub;
+            document.getElementById('lbl-notif').innerText = t.lblNotif;
+            document.getElementById('lbl-notif-sub').innerText = t.lblNotifSub;
+            document.getElementById('sec-saved').innerText = t.secSaved;
+            document.getElementById('btn-load').innerText = t.btnLoad;
+            document.getElementById('tab-lbl-home').innerText = t.tabHome;
+            document.getElementById('tab-lbl-kundli').innerText = t.tabKundli;
+            document.getElementById('tab-lbl-ai').innerText = t.tabAi;
+            document.getElementById('tab-lbl-matching').innerText = t.tabMatching;
+            document.getElementById('tab-lbl-profile').innerText = t.tabProfile;
+
+            showToast(`Language switched successfully!`);
+        }
+
+        // Tab Navigation Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-amber-400');
+                btn.classList.add('text-slate-400');
+            });
+            document.getElementById(`nav-${tabId}`).classList.add('text-amber-400');
+            document.getElementById(`nav-${tabId}`).classList.remove('text-slate-400');
+        }
+
+        // Rashi Data
+        const rashis = [
+            { name: 'Aries', hindi: 'मेष', telugu: 'మేషం', symbol: '♈' },
+            { name: 'Taurus', hindi: 'वृषभ', telugu: 'వృషభం', symbol: '♉' },
+            { name: 'Gemini', hindi: 'मिथुन', telugu: 'మిథునం', symbol: '♊' },
+            { name: 'Cancer', hindi: 'कर्क', telugu: 'కర్కాటకం', symbol: '♋' },
+            { name: 'Leo', hindi: 'सिंह', telugu: 'సింహం', symbol: '♌' },
+            { name: 'Virgo', hindi: 'कन्या', telugu: 'కన్య', symbol: '♍' },
+            { name: 'Libra', hindi: 'तुला', telugu: 'తుల', symbol: '♎' },
+            { name: 'Scorpio', hindi: 'वृश्चिक', telugu: 'వృశ్చికం', symbol: '♏' },
+            { name: 'Sagittarius', hindi: 'धनु', telugu: 'ధనుస్సు', symbol: '♐' },
+            { name: 'Capricorn', hindi: 'मकर', telugu: 'మకరం', symbol: '♑' },
+            { name: 'Aquarius', hindi: 'कुंभ', telugu: 'కుంభం', symbol: '♒' },
+            { name: 'Pisces', hindi: 'मीन', telugu: 'మీనం', symbol: '♓' }
+        ];
+
+        function renderRashis() {
+            const grid = document.getElementById('rashi-grid');
+            grid.innerHTML = '';
+            rashis.forEach((r, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `p-3 rounded-xl border transition flex flex-col items-center justify-center gap-1 ${idx === 0 ? 'bg-amber-500/20 border-amber-500 text-amber-200' : 'bg-vedic-800/60 border-vedic-600 text-slate-300 hover:border-amber-500/50'}`;
+                btn.innerHTML = `<span class="text-2xl">${r.symbol}</span><span class="text-xs font-semibold">${r.name}</span><span class="text-[10px] text-amber-400/80">${r.telugu}</span>`;
+                btn.onclick = () => selectRashi(idx, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function selectRashi(idx, btnElement) {
+            document.querySelectorAll('#rashi-grid button').forEach(b => {
+                b.className = 'p-3 rounded-xl border bg-vedic-800/60 border-vedic-600 text-slate-300 hover:border-amber-500/50 flex flex-col items-center justify-center gap-1';
+            });
+            btnElement.className = 'p-3 rounded-xl border bg-amber-500/20 border-amber-500 text-amber-200 flex flex-col items-center justify-center gap-1';
+            
+            const r = rashis[idx];
+            document.getElementById('current-rashi-icon').innerText = r.symbol;
+            document.getElementById('current-rashi-name').innerText = `${r.name} (${r.hindi} / ${r.telugu})`;
+            showToast(`Loaded forecast for ${r.name}`);
+        }
+
+        // Kundli Generator Action
+        function generateKundli(e) {
+            e.preventDefault();
+            const name = document.getElementById('k-name').value;
+            showToast(`Generating Vedic Kundli for ${name}...`);
+            setTimeout(() => {
+                showToast(`Kundli generated successfully with precise planetary degrees!`);
+            }, 600);
+        }
+
+        // Matching Action
+        function calculateMatching() {
+            const boy = document.getElementById('m-boy-name').value;
+            const girl = document.getElementById('m-girl-name').value;
+            showToast(`Calculating Guna Milan between ${boy} & ${girl}...`);
+            setTimeout(() => {
+                document.getElementById('matching-result').classList.remove('hidden');
+                showToast(`Guna Milan complete: 28.5 / 36 points!`);
+            }, 500);
+        }
+
+        // Chatbot Functions
+        function handleChatKey(e) {
+            if (e.key === 'Enter') sendChatMessage();
+        }
+
+        function sendQuickPrompt(text) {
+            document.getElementById('chat-input').value = text;
+            sendChatMessage();
+        }
+
+        function sendChatMessage() {
+            const inputEl = document.getElementById('chat-input');
+            const txt = inputEl.value.trim();
+            if (!txt) return;
+
+            const chatContainer = document.getElementById('chat-messages');
+
+            // User Bubble
+            const userDiv = document.createElement('div');
+            userDiv.className = 'flex items-start justify-end space-x-3';
+            userDiv.innerHTML = `
+                <div class="glass-card rounded-2xl rounded-tr-sm p-4 max-w-[80%] bg-amber-500/10 border-amber-500/30 text-amber-100 leading-relaxed">${txt}</div>
+                <div class="w-8 h-8 rounded-full bg-amber-500 text-vedic-900 flex items-center justify-center shrink-0 font-bold text-xs">U</div>
+            `;
+            chatContainer.appendChild(userDiv);
+            inputEl.value = '';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // Simulated Astrological AI Response in Telugu/Hindi/English
+            setTimeout(() => {
+                let aiReply = "Based on Vedic Astrology principles and current planetary transits (Gochar), your chart indicates favorable outcomes. Ensure you maintain discipline and focus on spiritual mindfulness.";
+                if (currentLanguage === 'hi') {
+                    aiReply = "वैदिक ज्योतिष और वर्तमान ग्रह गोचर के अनुसार, आपकी कुंडली में अनुकूल परिणाम दिखाई दे रहे हैं। नियमित ध्यान और सकारात्मक दृष्टिकोण रखें।";
+                } else if (currentLanguage === 'te') {
+                    aiReply = "వేద జ్యోతిషశాస్త్రం మరియు ప్రస్తుత గ్రహ గోచారం ప్రకారం, మీ జాతకంలో అనుకూలమైన ఫలితాలు ఉన్నాయి. సానుకూల దృక్పథంతో ముందుకు సాగండి.";
+                }
+
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'flex items-start space-x-3';
+                aiDiv.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0 text-amber-300 font-bold">AI</div>
+                    <div class="glass-card rounded-2xl rounded-tl-sm p-4 max-w-[80%] text-slate-200 leading-relaxed">${aiReply}</div>
+                `;
+                chatContainer.appendChild(aiDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 750);
+        }
+
+        function clearChat() {
+            const chatContainer = document.getElementById('chat-messages');
+            chatContainer.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0 text-amber-300 font-bold">AI</div>
+                    <div class="glass-card rounded-2xl rounded-tl-sm p-4 max-w-[80%] text-slate-200 leading-relaxed">Chat history cleared. How may I assist you today?</div>
+                </div>
+            `;
+            showToast("Chat history cleared.");
+        }
+
+        // Toast Notification Helper
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            t.classList.remove('opacity-0', 'pointer-events-none');
+            t.classList.add('opacity-100');
+            setTimeout(() => {
+                t.classList.remove('opacity-100');
+                t.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
